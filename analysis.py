@@ -11,7 +11,6 @@ from scipy import stats
 from joblib import Parallel, delayed
 import warnings
 
-# Import the model
 from rumor_model import (
     RumorModel, 
     AgentState,
@@ -19,11 +18,9 @@ from rumor_model import (
     run_simulation_with_history
 )
 
-# Configuration
 plt.style.use('seaborn-v0_8-whitegrid')
 warnings.filterwarnings('ignore')
 
-# Create output directory
 OUTPUT_DIR = Path("results")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -98,7 +95,7 @@ class AnalysisSuite:
             })
         
         df = pd.DataFrame(results)
-        self._raw_stochastic_data = raw_data  # Store for plotting
+        self._raw_stochastic_data = raw_data  
         return df
     
     def plot_stochastic_results(
@@ -108,7 +105,6 @@ class AnalysisSuite:
     ) -> None:
         """Generate all stochastic analysis plots."""
         
-        # Plot 1: Bar chart with error bars (confidence intervals)
         fig, ax = plt.subplots(figsize=(10, 6))
         x = df['stifle_chance'].astype(str)
         y = df['mean_reach']
@@ -121,7 +117,6 @@ class AnalysisSuite:
         ax.set_ylabel('Mean Reach (Number Informed)', fontsize=12)
         ax.set_title('Stochastic Analysis: Rumor Reach vs Stifling Probability\n(95% Confidence Intervals)', fontsize=14)
         
-        # Add value labels
         for bar, val, std in zip(bars, y, df['std_reach']):
             ax.annotate(f'{val:.0f}±{std:.0f}', 
                        xy=(bar.get_x() + bar.get_width()/2, bar.get_height()),
@@ -131,7 +126,6 @@ class AnalysisSuite:
         plt.savefig(OUTPUT_DIR / f"{save_prefix}_reach_ci.png", dpi=300)
         plt.close()
         
-        # Plot 2: Distribution violin plots
         if hasattr(self, '_raw_stochastic_data'):
             fig, ax = plt.subplots(figsize=(12, 6))
             
@@ -151,7 +145,6 @@ class AnalysisSuite:
             plt.savefig(OUTPUT_DIR / f"{save_prefix}_distribution.png", dpi=300)
             plt.close()
         
-        # Plot 3: Reach fraction (percentage of population)
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.plot(df['stifle_chance'], df['reach_fraction'] * 100, 
                 marker='o', markersize=10, linewidth=2, color='darkgreen')
@@ -335,7 +328,6 @@ class AnalysisSuite:
             ax.set_xticks([])
             ax.set_yticks([])
         
-        # Legend
         from matplotlib.patches import Patch
         legend_elements = [
             Patch(facecolor='white', edgecolor='black', label='Ignorant'),
@@ -349,7 +341,6 @@ class AnalysisSuite:
         plt.savefig(OUTPUT_DIR / "spatial_comparison.png", dpi=300, bbox_inches='tight')
         plt.close()
         
-        # Times heard heatmap
         fig, axes = plt.subplots(1, 2, figsize=(12, 5))
         
         for ax, stifle in zip(axes, [25, 75]):
@@ -404,7 +395,6 @@ class AnalysisSuite:
         dynamics: Dict[float, pd.DataFrame],
         save_prefix: str = "temporal"
     ) -> None:        
-        # Plot 1: State evolution for each stifle value
         n_plots = len(dynamics)
         fig, axes = plt.subplots(1, n_plots, figsize=(4*n_plots, 4), sharey=True)
         if n_plots == 1:
@@ -433,7 +423,6 @@ class AnalysisSuite:
         plt.savefig(OUTPUT_DIR / f"{save_prefix}_evolution.png", dpi=300, bbox_inches='tight')
         plt.close()
         
-        # Plot 2: Spreader curves comparison
         fig, ax = plt.subplots(figsize=(10, 6))
         
         colors = plt.cm.viridis(np.linspace(0, 1, len(dynamics)))
@@ -460,7 +449,6 @@ class AnalysisSuite:
         results = []
         stifle_values = list(self._raw_stochastic_data.keys())
         
-        # Pairwise t-tests
         for i, s1 in enumerate(stifle_values):
             for s2 in stifle_values[i+1:]:
                 data1 = self._raw_stochastic_data[s1]['reaches']
@@ -469,7 +457,7 @@ class AnalysisSuite:
                 t_stat, p_value = stats.ttest_ind(data1, data2)
                 effect_size = (np.mean(data1) - np.mean(data2)) / np.sqrt(
                     (np.std(data1)**2 + np.std(data2)**2) / 2
-                )  # Cohen's d
+                )  
                 
                 results.append({
                     'comparison': f'{s1}% vs {s2}%',
@@ -479,7 +467,6 @@ class AnalysisSuite:
                     'cohens_d': effect_size
                 })
         
-        # ANOVA
         all_groups = [self._raw_stochastic_data[s]['reaches'] for s in stifle_values]
         f_stat, anova_p = stats.f_oneway(*all_groups)
         
